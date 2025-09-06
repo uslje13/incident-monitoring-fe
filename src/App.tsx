@@ -1,35 +1,67 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import {BrowserRouter as Router, Routes, Route, Navigate} from "react-router-dom";
+import LoginPage from "./components/LoginPage.tsx";
+import {Navbar} from "./components/Navbar.tsx";
+import {useState} from "react";
+import {AuthGuard} from "./guards/AuthGuard.tsx";
+import HomePage from "./components/HomePage.tsx";
+import DocumentDetails from "./components/DocumentDetails.tsx";
 
 function App() {
-  const [count, setCount] = useState(0)
+    const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('authToken'));
 
-  return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    const handleLoginSuccess = () => {
+        setIsLoggedIn(true);
+    };
+
+    const handleLogout = () => {
+        setIsLoggedIn(false);
+        localStorage.removeItem('authToken');
+    };
+
+    return (
+        <Router>
+            <Navbar brand="Incident Monitoring App" isLoggedIn={isLoggedIn} onLogout={handleLogout}/>
+
+            <div style={containerStyle}>
+                <Routes>
+                    <Route
+                        path="/login"
+                        element={
+                            <AuthGuard isLoginPage>
+                                <LoginPage onLoginSuccess={handleLoginSuccess}/>
+                            </AuthGuard>
+                        }
+                    />
+                    <Route
+                        path="/home"
+                        element={
+                            <AuthGuard>
+                                <HomePage/>
+                            </AuthGuard>
+                        }
+                    />
+                    <Route
+                        path="/document-details"
+                        element={
+                            <AuthGuard>
+                                <DocumentDetails/>
+                            </AuthGuard>
+                        }
+                    />
+                    <Route path="*" element={<Navigate to={isLoggedIn ? "/home" : "/login"} replace/>}/>
+                </Routes>
+            </div>
+        </Router>
+    );
 }
 
-export default App
+const containerStyle: React.CSSProperties = {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: '100%',
+    minHeight: '100vh',
+    backgroundColor: '#ffffff'
+};
+
+export default App;
